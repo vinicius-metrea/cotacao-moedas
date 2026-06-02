@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -355,20 +356,24 @@ const HISTORY_COLORS = ['#6c63ff','#00d4aa','#ff9f43','#ff5c7a','#54a0ff','#feca
 let currentBase = 'USD';
 let charts = {};
 
+const API_BASE = location.protocol === 'file:'
+  ? 'https://api.frankfurter.app'
+  : '/api';
+
 async function fetchRates(base) {
-  const res = await fetch(`https://api.frankfurter.app/latest?from=${base}`);
+  const res = await fetch(`${API_BASE}/latest?from=${base}`);
   if (!res.ok) throw new Error('Erro ao buscar cotações');
   return res.json();
 }
 
 async function fetchHistory(base) {
-  const res = await fetch(`https://api.frankfurter.app/2025-01-01..?from=${base}&to=${HISTORY_CURRENCIES.filter(c => c !== base).join(',')}`);
+  const res = await fetch(`${API_BASE}/2025-01-01..?from=${base}&to=${HISTORY_CURRENCIES.filter(c => c !== base).join(',')}`);
   if (!res.ok) throw new Error('Erro ao buscar histórico');
   return res.json();
 }
 
 async function fetchYearStart(base) {
-  const res = await fetch(`https://api.frankfurter.app/2025-01-02?from=${base}`);
+  const res = await fetch(`${API_BASE}/2025-01-02?from=${base}`);
   if (!res.ok) throw new Error('Erro ao buscar início do ano');
   return res.json();
 }
