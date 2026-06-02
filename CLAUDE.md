@@ -2,6 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## GitHub repository
+
+Repositório: **https://github.com/vinicius-metrea/cotacao-moedas**
+
+### Sincronização automática com GitHub
+
+O script `watch-and-sync.ps1` monitora o diretório e envia alterações ao GitHub automaticamente após 3 segundos de inatividade:
+
+```powershell
+pwsh -File watch-and-sync.ps1
+```
+
+Arquivos monitorados: `moedas.html`, `server.ps1`, `CLAUDE.md`, `.gitignore`, `watch-and-sync.ps1`. Imagens (`.png`, `.jpg`) são ignoradas.
+
+Para enviar manualmente:
+```powershell
+git add -A && git commit -m "mensagem" && git push origin master
+```
+
 ## Running the project
 
 **Option 1 — abrir direto no browser (sem servidor):**
