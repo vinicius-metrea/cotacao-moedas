@@ -23,17 +23,13 @@ git add -A && git commit -m "mensagem" && git push origin master
 
 ## Running the project
 
-**Option 1 — abrir direto no browser (sem servidor):**
-```
-start moedas.html
-```
-Funciona para a maioria dos casos; as chamadas à API Frankfurter são feitas direto do browser.
+**Sempre use o servidor local** — o site não funciona quando aberto como `file://`:
 
-**Option 2 — servidor local com proxy (recomendado para evitar CORS):**
 ```powershell
 pwsh -File server.ps1
 ```
-Acesse em `http://localhost:8080`. O servidor proxy redireciona `/api/*` → `https://api.frankfurter.app/*`.
+
+Depois abra `http://localhost:8080` no browser. O servidor é obrigatório porque `moedas.html` usa URLs relativas (`/api/*`) que são roteadas pelo proxy do `server.ps1` para a Frankfurter API. Abrir o arquivo diretamente causa "Failed to fetch".
 
 ## Architecture
 
