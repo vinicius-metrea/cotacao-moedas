@@ -1,2 +1,4 @@
-screenshot_*.png
-atalhos terminal.png
+*.png
+server_log.txt
+server_err.txt
+.claude/
