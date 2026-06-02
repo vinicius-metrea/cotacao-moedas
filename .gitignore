@@ -1,4 +1,7 @@
 *.png
 server_log.txt
 server_err.txt
+py_out.txt
+py_err.txt
 .claude/
+__pycache__/

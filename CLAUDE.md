@@ -26,10 +26,10 @@ git add -A && git commit -m "mensagem" && git push origin master
 **Sempre use o servidor local** — o site não funciona quando aberto como `file://`:
 
 ```powershell
-pwsh -File server.ps1
+python server.py
 ```
 
-Depois abra `http://localhost:8080` no browser. O servidor é obrigatório porque `moedas.html` usa URLs relativas (`/api/*`) que são roteadas pelo proxy do `server.ps1` para a Frankfurter API. Abrir o arquivo diretamente causa "Failed to fetch".
+Depois abra `http://localhost:8080` no browser. O servidor é obrigatório porque `moedas.html` usa URLs relativas (`/api/*`) que são roteadas pelo proxy para a Frankfurter API. Abrir o arquivo diretamente causa "Failed to fetch".
 
 ## Architecture
 
@@ -48,9 +48,11 @@ O site faz **3 chamadas paralelas** ao carregar (via `Promise.all`):
 - `/2025-01-02?from={base}` — taxa no início do ano (para calcular variação % anual)
 - `/2025-01-01..?from={base}&to={currencies}` — histórico 2025 para o gráfico de linha
 
-### `server.ps1`
+### `server.py`
 
-Servidor HTTP puro em PowerShell (sem dependências externas). Serve arquivos estáticos do diretório do projeto e atua como proxy reverso para a Frankfurter API via rotas `/api/*`. Útil quando o browser bloqueia CORS em `file://`.
+Servidor HTTP multi-threaded (`ThreadingHTTPServer`) em Python puro (sem dependências externas além da stdlib). Serve arquivos estáticos do diretório do projeto, redireciona `/` → `moedas.html`, e faz proxy de `/api/*` → `https://api.frankfurter.app/*`. Reinicia automaticamente em caso de erro (exceto `KeyboardInterrupt`). O `server.ps1` original foi substituído por este.
+
+Requer Python 3.12+: `winget install Python.Python.3.12`
 
 ### Charting
 
