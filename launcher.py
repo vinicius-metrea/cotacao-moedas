@@ -22,7 +22,6 @@ _signal_module.signal = _safe_signal
 import sys
 import threading
 import time
-import socket
 
 
 def resource_path(rel: str) -> str:
@@ -42,12 +41,14 @@ def run_streamlit(port: int) -> None:
 
 
 def wait_for_server(port: int, timeout: int = 30) -> bool:
+    import urllib.request
+    import urllib.error
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
-            with socket.create_connection(("127.0.0.1", port), timeout=1):
-                return True
-        except OSError:
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/_stcore/health", timeout=1)
+            return True
+        except Exception:
             time.sleep(0.3)
     return False
 
