@@ -8,11 +8,7 @@ Repositório: **https://github.com/vinicius-metrea/cotacao-moedas**
 
 ### Sincronização automática com GitHub
 
-O script `watch-and-sync.ps1` monitora o diretório e envia alterações ao GitHub automaticamente após 3 segundos de inatividade:
-
-```powershell
-pwsh -File watch-and-sync.ps1
-```
+O Claude Code possui um hook `Stop` configurado em `.claude/settings.local.json` que faz commit e push automaticamente ao final de cada resposta.
 
 Para enviar manualmente:
 ```powershell
