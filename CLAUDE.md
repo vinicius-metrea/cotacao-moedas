@@ -17,28 +17,25 @@ git add -A && git commit -m "mensagem" && git push origin master
 
 ## Running the project
 
-**Modo web (desenvolvimento):**
-```powershell
-streamlit run app.py
-```
-O app abre em `http://localhost:8501`. Requer Python 3.12+:
-```powershell
-pip install streamlit yfinance pandas plotly
-```
-
-**Modo desktop (executável):**
 ```
 dist\CotacaoMoedas\CotacaoMoedas.exe
 ```
-O executável abre o app numa janela nativa via `pywebview`, sem precisar de navegador ou terminal. Para rebuild:
+
+O executável abre o app numa janela nativa via `pywebview`, sem precisar de navegador ou terminal.
+
+Para rebuild do executável:
 ```powershell
 pwsh -File build.ps1
 ```
-Requer adicionalmente: `pip install pywebview pyinstaller`
+
+Dependências necessárias para o build:
+```powershell
+pip install streamlit yfinance pandas plotly pywebview pyinstaller
+```
 
 ## Architecture
 
-O projeto tem dois modos de execução: **web** (`streamlit run app.py`) e **desktop** (executável PyInstaller).
+O projeto é um **app desktop** empacotado como executável Windows. O Streamlit roda internamente em uma thread e a UI é exibida numa janela nativa via `pywebview` — sem navegador, sem terminal.
 
 ### Arquivos principais
 
@@ -63,12 +60,9 @@ O projeto tem dois modos de execução: **web** (`streamlit run app.py`) e **des
 ### Data flow
 
 ```
-app.py → yfinance (Yahoo Finance) → pandas DataFrame → plotly charts + st.dataframe
-```
-
-**Modo desktop:**
-```
-launcher.py → thread: Streamlit (porta 8501) → pywebview (janela nativa apontando para localhost:8501)
+launcher.py → thread: Streamlit (porta 8501, headless) → pywebview (janela nativa)
+                  ↓
+             app.py → yfinance (Yahoo Finance) → pandas DataFrame → plotly charts + st.dataframe
 ```
 
 Os dados são buscados via `yf.download()` com tickers no formato `{BASE}{TARGET}=X` (ex: `USDBRL=X`), cobrindo `2025-01-01` até hoje. O cache é de **1 hora** via `@st.cache_data(ttl=3600)`.
