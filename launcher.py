@@ -4,6 +4,10 @@ import time
 import subprocess
 
 
+def exe_dir() -> str:
+    return os.path.dirname(os.path.abspath(sys.executable if getattr(sys, "frozen", False) else __file__))
+
+
 def resource_path(rel: str) -> str:
     base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base, rel)
@@ -11,31 +15,44 @@ def resource_path(rel: str) -> str:
 
 PORT = 8501
 
-# ── Server mode: called by the subprocess spawned below ──────────────────────
+# ── Server mode ───────────────────────────────────────────────────────────────
 
 if "--streamlit-server" in sys.argv:
+    # Change to exe directory so Streamlit picks up .streamlit/config.toml
+    os.chdir(exe_dir())
+
     import webbrowser
     webbrowser.open = lambda *a, **kw: None
     webbrowser.open_new = lambda *a, **kw: None
     webbrowser.open_new_tab = lambda *a, **kw: None
 
-    os.environ["STREAMLIT_SERVER_HEADLESS"] = "true"
-    os.environ["STREAMLIT_SERVER_ENABLE_CORS"] = "false"
-    os.environ["STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION"] = "false"
-    os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
-
     from streamlit.web.bootstrap import run
     run(resource_path("app.py"), "", [], {
         "server.port": PORT,
         "server.headless": True,
-        "browser.gatherUsageStats": False,
-        "server.enableCORS": False,
-        "server.enableXsrfProtection": False,
     })
     sys.exit(0)
 
 
-# ── Main mode: spawn server subprocess, wait, open webview ───────────────────
+# ── Main mode ─────────────────────────────────────────────────────────────────
+
+def ensure_streamlit_config() -> None:
+    """Write .streamlit/config.toml next to the exe if it doesn't exist."""
+    config_dir = os.path.join(exe_dir(), ".streamlit")
+    config_path = os.path.join(config_dir, "config.toml")
+    os.makedirs(config_dir, exist_ok=True)
+    with open(config_path, "w") as f:
+        f.write(
+            "[global]\n"
+            "developmentMode = false\n\n"
+            "[server]\n"
+            "headless = true\n"
+            "enableCORS = true\n"
+            "enableXsrfProtection = false\n\n"
+            "[browser]\n"
+            "gatherUsageStats = false\n"
+        )
+
 
 def wait_for_server(timeout: int = 30) -> bool:
     import urllib.request
@@ -50,9 +67,12 @@ def wait_for_server(timeout: int = 30) -> bool:
 
 
 if __name__ == "__main__":
+    ensure_streamlit_config()
+
     flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
     server = subprocess.Popen(
         [sys.executable, "--streamlit-server"],
+        cwd=exe_dir(),
         creationflags=flags,
     )
 
