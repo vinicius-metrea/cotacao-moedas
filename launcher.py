@@ -1,7 +1,6 @@
 import os
 import webbrowser
 
-# Bloqueia qualquer tentativa de abrir o browser antes de importar o Streamlit
 webbrowser.open = lambda *a, **kw: None
 webbrowser.open_new = lambda *a, **kw: None
 webbrowser.open_new_tab = lambda *a, **kw: None
@@ -11,11 +10,19 @@ os.environ["STREAMLIT_SERVER_ENABLE_CORS"] = "false"
 os.environ["STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION"] = "false"
 os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
 
+import signal as _signal_module
+_orig_signal = _signal_module.signal
+def _safe_signal(signum, handler):
+    try:
+        return _orig_signal(signum, handler)
+    except (ValueError, OSError):
+        pass
+_signal_module.signal = _safe_signal
+
 import sys
 import threading
 import time
 import socket
-import webview
 
 
 def resource_path(rel: str) -> str:
@@ -55,6 +62,7 @@ if __name__ == "__main__":
         mb.showerror("Erro", "O servidor não iniciou. Tente abrir novamente.")
         sys.exit(1)
 
+    import webview
     webview.create_window(
         "Cotação de Moedas",
         f"http://127.0.0.1:{PORT}",
