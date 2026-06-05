@@ -17,19 +17,37 @@ git add -A && git commit -m "mensagem" && git push origin master
 
 ## Running the project
 
+**Modo web (desenvolvimento):**
 ```powershell
 streamlit run app.py
 ```
-
-O app abre automaticamente em `http://localhost:8501`. Requer Python 3.12+ e os pacotes abaixo instalados:
-
+O app abre em `http://localhost:8501`. Requer Python 3.12+:
 ```powershell
 pip install streamlit yfinance pandas plotly
 ```
 
+**Modo desktop (executável):**
+```
+dist\CotacaoMoedas\CotacaoMoedas.exe
+```
+O executável abre o app numa janela nativa via `pywebview`, sem precisar de navegador ou terminal. Para rebuild:
+```powershell
+pwsh -File build.ps1
+```
+Requer adicionalmente: `pip install pywebview pyinstaller`
+
 ## Architecture
 
-O projeto é um **app Streamlit single-file** contido inteiramente em `app.py`, sem build step nem dependências npm.
+O projeto tem dois modos de execução: **web** (`streamlit run app.py`) e **desktop** (executável PyInstaller).
+
+### Arquivos principais
+
+| Arquivo | Função |
+|---|---|
+| `app.py` | App Streamlit — toda a UI e lógica de dados |
+| `launcher.py` | Entry point do executável desktop (inicia Streamlit em thread e abre janela pywebview) |
+| `build.ps1` | Script PowerShell que gera `dist\CotacaoMoedas\CotacaoMoedas.exe` via PyInstaller |
+| `CotacaoMoedas.spec` | Spec do PyInstaller (gerado automaticamente pelo build.ps1) |
 
 ### Stack
 
@@ -39,11 +57,18 @@ O projeto é um **app Streamlit single-file** contido inteiramente em `app.py`, 
 | `yfinance` | Dados de câmbio (Yahoo Finance) |
 | `plotly` | Gráficos interativos |
 | `pandas` | Manipulação de dados |
+| `pywebview` | Janela nativa para o modo desktop |
+| `pyinstaller` | Empacotamento do executável (build apenas) |
 
 ### Data flow
 
 ```
 app.py → yfinance (Yahoo Finance) → pandas DataFrame → plotly charts + st.dataframe
+```
+
+**Modo desktop:**
+```
+launcher.py → thread: Streamlit (porta 8501) → pywebview (janela nativa apontando para localhost:8501)
 ```
 
 Os dados são buscados via `yf.download()` com tickers no formato `{BASE}{TARGET}=X` (ex: `USDBRL=X`), cobrindo `2025-01-01` até hoje. O cache é de **1 hora** via `@st.cache_data(ttl=3600)`.
