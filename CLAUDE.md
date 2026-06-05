@@ -14,8 +14,6 @@ O script `watch-and-sync.ps1` monitora o diretório e envia alterações ao GitH
 pwsh -File watch-and-sync.ps1
 ```
 
-Arquivos monitorados: `moedas.html`, `server.ps1`, `CLAUDE.md`, `.gitignore`, `watch-and-sync.ps1`. Imagens (`.png`, `.jpg`) são ignoradas.
-
 Para enviar manualmente:
 ```powershell
 git add -A && git commit -m "mensagem" && git push origin master
@@ -23,44 +21,50 @@ git add -A && git commit -m "mensagem" && git push origin master
 
 ## Running the project
 
-**Sempre use o servidor local** — o site não funciona quando aberto como `file://`:
-
 ```powershell
-python server.py
+streamlit run app.py
 ```
 
-Depois abra `http://localhost:8080` no browser. O servidor é obrigatório porque `moedas.html` usa URLs relativas (`/api/*`) que são roteadas pelo proxy para a Frankfurter API. Abrir o arquivo diretamente causa "Failed to fetch".
+O app abre automaticamente em `http://localhost:8501`. Requer Python 3.12+ e os pacotes abaixo instalados:
+
+```powershell
+pip install streamlit yfinance pandas plotly
+```
 
 ## Architecture
 
-O projeto é uma **single-page app** contida inteiramente em `moedas.html` (HTML + CSS + JS inline, sem build step, sem dependências npm).
+O projeto é um **app Streamlit single-file** contido inteiramente em `app.py`, sem build step nem dependências npm.
+
+### Stack
+
+| Biblioteca | Função |
+|---|---|
+| `streamlit` | Framework web / UI |
+| `yfinance` | Dados de câmbio (Yahoo Finance) |
+| `plotly` | Gráficos interativos |
+| `pandas` | Manipulação de dados |
 
 ### Data flow
 
 ```
-Browser → Frankfurter API (api.frankfurter.app)
-       OU
-Browser → server.ps1 (/api/*) → Frankfurter API
+app.py → yfinance (Yahoo Finance) → pandas DataFrame → plotly charts + st.dataframe
 ```
 
-O site faz **3 chamadas paralelas** ao carregar (via `Promise.all`):
-- `/latest?from={base}` — cotações do dia
-- `/2025-01-02?from={base}` — taxa no início do ano (para calcular variação % anual)
-- `/2025-01-01..?from={base}&to={currencies}` — histórico 2025 para o gráfico de linha
+Os dados são buscados via `yf.download()` com tickers no formato `{BASE}{TARGET}=X` (ex: `USDBRL=X`), cobrindo `2025-01-01` até hoje. O cache é de **1 hora** via `@st.cache_data(ttl=3600)`.
 
-### `server.py`
+### Estrutura do app (`app.py`)
 
-Servidor HTTP multi-threaded (`ThreadingHTTPServer`) em Python puro (sem dependências externas além da stdlib). Serve arquivos estáticos do diretório do projeto, redireciona `/` → `moedas.html`, e faz proxy de `/api/*` → `https://api.frankfurter.app/*`. Reinicia automaticamente em caso de erro (exceto `KeyboardInterrupt`). O `server.ps1` original foi substituído por este.
+1. **Header** — título + seletor de moeda base (`USD/EUR/BRL/GBP/JPY`) + botão ↺ Atualizar
+2. **Cards** — grid 5 colunas com flag, código, taxa atual e variação % no ano (verde/vermelho/cinza)
+3. **Gráfico de barras** — comparativo das principais moedas vs base
+4. **Gráfico donut** — distribuição das moedas por região geográfica
+5. **Gráfico de linha** — evolução normalizada em 2025 (Jan 2025 = 100) para 6 moedas
+6. **Tabela** — todas as moedas com taxa direta, inversa e variação no ano
 
-Requer Python 3.12+: `winget install Python.Python.3.12`
+### Moedas monitoradas (20 total)
 
-### Charting
-
-Usa **Chart.js 4.4.0** via CDN (`cdn.jsdelivr.net`). Três gráficos são criados/destruídos dinamicamente ao trocar a moeda base:
-- `barChart` — comparativo de moedas vs base (bar)
-- `donutChart` — distribuição por região (doughnut)
-- `lineChart` — evolução em 2025 normalizada (base 100 = primeiro dia do ano)
+`USD, EUR, GBP, JPY, CHF, CAD, AUD, CNY, BRL, MXN, INR, KRW, SGD, NOK, SEK, NZD, ZAR, HKD, DKK, ARS`
 
 ### Moeda base
 
-O seletor no header dispara `changeBase(value)`, que reinicia todo o ciclo de carregamento com a nova moeda base. A moeda base é excluída dos cards/tabela e dos datasets do gráfico de linha.
+O `st.selectbox` no header altera a variável `base`, que é passada para `fetch_data(base)`. Trocar a base limpa o cache e rebusca todos os dados com a nova moeda de referência. A moeda base é excluída dos cards, gráficos e tabela.

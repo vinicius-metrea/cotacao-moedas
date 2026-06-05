@@ -19,7 +19,7 @@ $syncJob = {
     $status = git status --porcelain
     if (-not $status) { return }
 
-    git add moedas.html server.ps1 CLAUDE.md .gitignore watch-and-sync.ps1 2>$null
+    git add app.py CLAUDE.md .gitignore watch-and-sync.ps1 2>$null
     $staged = git diff --cached --name-only
     if (-not $staged) { return }
 
