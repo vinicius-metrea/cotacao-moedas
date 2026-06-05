@@ -1,0 +1,65 @@
+import os
+import webbrowser
+
+# Bloqueia qualquer tentativa de abrir o browser antes de importar o Streamlit
+webbrowser.open = lambda *a, **kw: None
+webbrowser.open_new = lambda *a, **kw: None
+webbrowser.open_new_tab = lambda *a, **kw: None
+
+os.environ["STREAMLIT_SERVER_HEADLESS"] = "true"
+os.environ["STREAMLIT_SERVER_ENABLE_CORS"] = "false"
+os.environ["STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION"] = "false"
+os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
+
+import sys
+import threading
+import time
+import socket
+import webview
+
+
+def resource_path(rel: str) -> str:
+    base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base, rel)
+
+
+def run_streamlit(port: int) -> None:
+    from streamlit.web.bootstrap import run
+    run(resource_path("app.py"), "", [], {
+        "server.port": port,
+        "server.headless": True,
+        "browser.gatherUsageStats": False,
+        "server.enableCORS": False,
+        "server.enableXsrfProtection": False,
+    })
+
+
+def wait_for_server(port: int, timeout: int = 30) -> bool:
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=1):
+                return True
+        except OSError:
+            time.sleep(0.3)
+    return False
+
+
+if __name__ == "__main__":
+    PORT = 8501
+
+    threading.Thread(target=run_streamlit, args=(PORT,), daemon=True).start()
+
+    if not wait_for_server(PORT):
+        import tkinter.messagebox as mb
+        mb.showerror("Erro", "O servidor não iniciou. Tente abrir novamente.")
+        sys.exit(1)
+
+    webview.create_window(
+        "Cotação de Moedas",
+        f"http://127.0.0.1:{PORT}",
+        width=1400,
+        height=900,
+        min_size=(900, 650),
+    )
+    webview.start()

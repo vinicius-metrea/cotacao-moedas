@@ -5,3 +5,8 @@ py_out.txt
 py_err.txt
 .claude/
 __pycache__/
+
+# PyInstaller
+build/
+dist/
+*.spec
