@@ -15,6 +15,9 @@ pyinstaller `
     --collect-all streamlit `
     --collect-all pywebview `
     --collect-all altair `
+    --collect-all yfinance `
+    --collect-all pandas `
+    --collect-all plotly `
     --hidden-import "streamlit.web.bootstrap" `
     --hidden-import "streamlit.runtime.scriptrunner" `
     --hidden-import "streamlit.runtime.state" `
